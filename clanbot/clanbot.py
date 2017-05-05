@@ -15,24 +15,19 @@ class ClanBot(object):
         self.session.headers["X-API-Key"] = self.api_key
         
         self.user_base_uri = "https://www.bungie.net/Platform/User/"
-        self.destiny_base_uri = "https://www.bungie.net/Platform/Destiny"
+        self.destiny_base_uri = "https://www.bungie.net/Platform/Destiny/"
         self.GAMERTAG = "Ethernic"
         self.gamertag = None
         self.last_played = None
         self.membership_id = None 
-        self.membership_type = '2'
+        self.membership_type = '2' # -1=both, 1=xbox, 2=psn
         self.destiny_membership_id = None
         self.destiny_account_summary = None
         self.timefmt = '%Y-%m-%d %H:%M:%S %Z'
         
     def display_stats(self):
         print "{0}".format(self.gamertag)
-        print "Last played: {0}".format(self.last_played.strftime(self.timefmt))
-
-    def get_membership_id(self):    
-        full_uri = self.user_base_uri + 'SearchUsers/?q=' + self.gamertag
-        parsed = self.get_request(full_uri)
-        self.membership_id = parsed['Response'][0]['membershipId']
+        print "Last played: {0}".format(self.last_played.strftime(self.timefmt)) 
     
     def get_destiny_membership_id(self):
         full_uri = self.user_base_uri + 'GetBungieAccount/' + self.membership_id + '/254/'
@@ -45,6 +40,20 @@ class ClanBot(object):
             else:
                 i += 1
         #self.destiny_membership_id = parsed['Response']['destinyAccounts'][0]['userInfo']['membershipId']
+    
+    def get_destiny_details(self):
+        full_uri = self.destiny_base_uri + 'SearchDestinyPlayer/-1/' + self.gamertag
+        details = self.get_request(full_uri)
+        if len(details['Response']) > 1:
+            i = 0
+            while i < len(details['Response']):
+                if details['Response'][i]['membershipType'] == 2:
+                    self.destiny_membership_id = details['Response'][i]['membershipId']
+                    break
+                else:
+                    i += 1
+        else:
+            self.destiny_membership_id = details['Response'][0]['membershipId']
 
     def get_last_played(self):
         i = 0
@@ -56,7 +65,7 @@ class ClanBot(object):
         self.last_played = parse(max(date_list)).astimezone(est)
         
     def get_destiny_account_summary(self):
-        full_uri = self.destiny_base_uri + '/' + self.membership_type + '/Account/' + self.destiny_membership_id + '/Summary/' 
+        full_uri = self.destiny_base_uri + self.membership_type + '/Account/' + self.destiny_membership_id + '/Summary/' 
         self.destiny_account_summary = self.get_request(full_uri)
 
     def get_request(self, full_uri):
@@ -75,8 +84,9 @@ class ClanBot(object):
             i += 1
 
     def get_stats(self):
-        self.get_membership_id()
-        self.get_destiny_membership_id()
+        #self.get_membership_id()
+        #self.get_destiny_membership_id()
+        self.get_destiny_details()
         self.get_destiny_account_summary()
         self.get_last_played()
         self.display_stats()
