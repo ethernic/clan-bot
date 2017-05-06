@@ -36,16 +36,17 @@ class ClanBot(object):
         
     def display_stats(self):
         print '{0}'.format(self.gamertag)
+        self.last_played_days = str(self.date_math(parser.parse(self.last_played)))
         if not self.clan_dict['Members']:
             play_date = parser.parse(self.last_played).astimezone(self.est).strftime(self.timefmt)
-            print 'Last played: {0} ({1} days)'.format(play_date, self.last_played_days)
+            print 'Last played: {0} days ({1})'.format(self.last_played_days, play_date)
         else:
             play_date = parser.parse(self.last_played).astimezone(self.est).strftime(self.timefmt)
             self.member_since = self.clan_dict['Members'][self.gamertag]['approvalDate']
             member_date = parser.parse(self.member_since).astimezone(self.est).strftime(self.timefmt)
             self.member_since_days = str(self.date_math(parser.parse(self.member_since)))
-            print 'Member since: {0} ({1} days)'.format(member_date, self.member_since_days)
-           # print 'Last played: {0}'.format(play_date.strftime(self.timefmt)) 
+            print 'Member since: {0} days ({1})'.format(self.member_since_days, member_date)
+            print 'Last played: {0} days ({1})'.format(self.last_played_days, play_date) 
     
     def get_clan_id(self):
         i = 0
@@ -110,8 +111,6 @@ class ClanBot(object):
             date_list.append(self.destiny_account_summary['Response']['data']['characters'][i]['characterBase']['dateLastPlayed'])
             i += 1
         self.last_played = max(date_list)#parse(max(date_list)).astimezone(est)
-        last_played = parser.parse(self.last_played)
-        self.last_played_days = str(self.date_math(last_played))
         
     def get_destiny_account_summary(self, *DESTINYID):
         if not DESTINYID:
@@ -135,6 +134,11 @@ class ClanBot(object):
             with open(options[0].file, 'r') as f:
                 self.clan_dict = json.load(f)
             f.close()
+            if not options[0].gamertag:
+                for key in self.clan_dict['Members'].keys():
+                    self.gamertag = key
+                    self.last_played = self.clan_dict['Members'][key]['lastPlayed']
+                    self.display_stats()
         if options[0].update:
             self.get_clan_members()
             self.populate_stats()
