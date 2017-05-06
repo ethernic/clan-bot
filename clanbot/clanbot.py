@@ -5,6 +5,7 @@ import os
 import json
 import requests
 import pytz
+import time
 
 class ClanBot(object):
     """
@@ -33,24 +34,45 @@ class ClanBot(object):
         self.destiny_membership_id = None
         self.destiny_account_summary = None
         self.timefmt = '%Y-%m-%d %H:%M:%S %Z'
-        
+
+    def RateLimited(maxPerSecond):
+        minInterval = 1.0 / float(maxPerSecond)
+        def decorate(func):
+            lastTimeCalled = [0.0]
+            def rateLimitedFunction(*args,**kargs):
+                elapsed = time.clock() - lastTimeCalled[0]
+                leftToWait = minInterval - elapsed
+                if leftToWait>0:
+                    time.sleep(leftToWait)
+                ret = func(*args,**kargs)
+                lastTimeCalled[0] = time.clock()
+                return ret
+            return rateLimitedFunction
+        return decorate
+    
     def display_stats(self):
-        self.last_played_days = str(self.date_math(parser.parse(self.last_played)))
+        play_date = None
         member_date = None
         if not self.clan_dict['Members']:
             play_date = parser.parse(self.last_played).astimezone(self.est).strftime(self.timefmt)
-            print 'Last played: {0} days ({1})'.format(self.last_played_days, play_date)
+            self.last_played_days = str(self.date_math(parser.parse(self.last_played)))
+            #print '{0}'.format(self.gamertag)
+            #print 'Last played: {0} days ({1})'.format(self.last_played_days, play_date)
         else:
-            play_date = parser.parse(self.last_played).astimezone(self.est).strftime(self.timefmt)
             for key in self.clan_dict['Members'].keys():
                 if self.gamertag in key.lower():
                     self.gamertag = key
             self.member_since = self.clan_dict['Members'][self.gamertag]['approvalDate']
+            self.last_played = self.clan_dict['Members'][self.gamertag]['lastPlayed']
             member_date = parser.parse(self.member_since).astimezone(self.est).strftime(self.timefmt)
+            play_date = parser.parse(self.last_played).astimezone(self.est).strftime(self.timefmt)
             self.member_since_days = str(self.date_math(parser.parse(self.member_since)))
-            print '{0}'.format(self.gamertag)
+            self.last_played_days = str(self.date_math(parser.parse(self.last_played)))
+
+        print '{0}'.format(self.gamertag)
+        if self.clan_dict['Members']:
             print 'Member since: {0} days ({1})'.format(self.member_since_days, member_date)
-            print 'Last played: {0} days ({1})'.format(self.last_played_days, play_date) 
+        print 'Last played: {0} days ({1})'.format(self.last_played_days, play_date) 
     
     def get_clan_id(self):
         i = 0
@@ -123,7 +145,9 @@ class ClanBot(object):
             MEMBERSHIPID = DESTINYID
         full_uri = self.destiny_base_uri + self.membership_type + '/Account/' + MEMBERSHIPID + '/Summary/' 
         self.destiny_account_summary = self.get_request(full_uri)
+        #print self.destiny_account_summary['ThrottleSeconds']
 
+    @RateLimited(10)
     def get_request(self, full_uri):
         response = self.session.get(full_uri)
         if response.status_code == 200:
@@ -149,7 +173,10 @@ class ClanBot(object):
         elif options[0].gamertag:
             while i < len(options[0].gamertag):
                 self.gamertag=options[0].gamertag[i]
-                self.get_stats()
+                if options[0].file:
+                    self.display_stats()
+                else:
+                    self.get_stats()
                 i += 1
 
     def populate_stats(self):
