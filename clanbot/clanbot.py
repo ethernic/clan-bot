@@ -35,16 +35,20 @@ class ClanBot(object):
         self.timefmt = '%Y-%m-%d %H:%M:%S %Z'
         
     def display_stats(self):
-        print '{0}'.format(self.gamertag)
         self.last_played_days = str(self.date_math(parser.parse(self.last_played)))
+        member_date = None
         if not self.clan_dict['Members']:
             play_date = parser.parse(self.last_played).astimezone(self.est).strftime(self.timefmt)
             print 'Last played: {0} days ({1})'.format(self.last_played_days, play_date)
         else:
             play_date = parser.parse(self.last_played).astimezone(self.est).strftime(self.timefmt)
+            for key in self.clan_dict['Members'].keys():
+                if self.gamertag in key.lower():
+                    self.gamertag = key
             self.member_since = self.clan_dict['Members'][self.gamertag]['approvalDate']
             member_date = parser.parse(self.member_since).astimezone(self.est).strftime(self.timefmt)
             self.member_since_days = str(self.date_math(parser.parse(self.member_since)))
+            print '{0}'.format(self.gamertag)
             print 'Member since: {0} days ({1})'.format(self.member_since_days, member_date)
             print 'Last played: {0} days ({1})'.format(self.last_played_days, play_date) 
     
