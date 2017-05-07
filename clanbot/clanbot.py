@@ -147,7 +147,7 @@ class ClanBot(object):
         self.destiny_account_summary = self.get_request(full_uri)
         #print self.destiny_account_summary['ThrottleSeconds']
 
-    @RateLimited(10)
+    @RateLimited(20)
     def get_request(self, full_uri):
         response = self.session.get(full_uri)
         if response.status_code == 200:
@@ -170,11 +170,14 @@ class ClanBot(object):
         if options[0].update:
             self.get_clan_members()
             self.populate_stats()
-        elif options[0].gamertag:
+        if options[0].gamertag:
             while i < len(options[0].gamertag):
                 self.gamertag=options[0].gamertag[i]
                 if options[0].file:
-                    self.display_stats()
+                    if options[0].live:
+                        self.get_stats()
+                    else:
+                        self.display_stats()
                 else:
                     self.get_stats()
                 i += 1

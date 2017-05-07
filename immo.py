@@ -4,15 +4,20 @@ import sys
 
 def main():
     parser = argparse.ArgumentParser(prog=sys.argv[0])
+    parser.add_argument('-c', '--clan',
+                        action='store',
+                        type=str,
+                        dest='clan',
+                        help='specify clan in quotes')
     parser.add_argument('-f', '--file',
                         action='store',
                         type=str,
                         dest='file',
                         help='stats file to parse')
-    parser.add_argument('-l', '--last-played',
+    parser.add_argument('-l', '--live',
                         action='store_true',
-                        dest='last_played',
-                        help='display last played time for player')
+                        dest='live',
+                        help='get live stats for last played')
     parser.add_argument('-u', '--update',
                         action='store_true',
                         dest='update',
@@ -21,8 +26,9 @@ def main():
                         nargs=argparse.REMAINDER,
                         help='your subject\'s gamertag')
     options = parser.parse_args()
-    if not options:
-        ClanBot().initialize()
+    if len(sys.argv) < 2:
+        parser.print_help()
+        sys.exit(0)
     else:
         ClanBot().initialize(options)
 
