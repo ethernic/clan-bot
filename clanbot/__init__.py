@@ -1,0 +1,1 @@
+from clanbot import ClanBot
